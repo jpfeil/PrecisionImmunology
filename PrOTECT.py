@@ -233,59 +233,59 @@ def pipeline_launchpad(job, fastqs, univ_options, tool_options):
     job.addChild(sample_prep)  # Edge  0->1
     # A. The first step is running the alignments and the MHC haplotypers
     sample_prep.addChild(cutadapt)  # Edge  1->2
-    sample_prep.addChild(bwa_tumor)  # Edge  1->3
-    sample_prep.addChild(bwa_normal)  # Edge  1->4
-    sample_prep.addChild(phlat_tumor_dna)  # Edge  1->5
-    sample_prep.addChild(phlat_normal_dna)  # Edge  1->6
-    sample_prep.addChild(phlat_tumor_rna)  # Edge  1->7
-    # B. cutadapt will be followed by star
-    cutadapt.addChild(star)  # Edge 2->8
-    # Ci.  gene expression and fusion detection follow start alignment
-    star.addChild(rsem)  # Edge  8->9
-    star.addChild(fusions)  # Edge  8->10
-    # Cii.  Radia depends on all 3 alignments
-    star.addChild(Sradia)  # Edge  8->11
-    bwa_tumor.addChild(Sradia)  # Edge  3->11
-    bwa_normal.addChild(Sradia)  # Edge  4->11
-    # Ciii. mutect and indel calling depends on dna to have been aligned
-    bwa_tumor.addChild(Smutect)  # Edge  3->12
-    bwa_normal.addChild(Smutect)  # Edge  4->12
-    bwa_tumor.addChild(indels)  # Edge  3->13
-    bwa_normal.addChild(indels)  # Edge  4->13
-    # D. MHC haplotypes will be merged once all 3 samples have been PHLAT-ed
-    phlat_tumor_dna.addChild(merge_phlat)  # Edge  5->14
-    phlat_normal_dna.addChild(merge_phlat)  # Edge  6->14
-    phlat_tumor_rna.addChild(merge_phlat)  # Edge  7->14
-    # E. Delete the fastqs from the job store since all alignments are complete
-    sample_prep.addChild(fastq_deletion)
-    cutadapt.addChild(fastq_deletion)
-    bwa_normal.addChild(fastq_deletion)
-    bwa_tumor.addChild(fastq_deletion)
-    phlat_normal_dna.addChild(fastq_deletion)
-    phlat_tumor_dna.addChild(fastq_deletion)
-    phlat_tumor_rna.addChild(fastq_deletion)
-    # F. Mutation calls need to be merged before they can be used
-    Sradia.addChild(Mradia)  # Edge 11->15
-    Smutect.addChild(Mmutect)  # Edge 12->16
-    # G. All mutations get aggregated when they have finished running
-    fusions.addChild(merge_mutations)  # Edge 10->17
-    Mradia.addChild(merge_mutations)  # Edge 15->17
-    Mmutect.addChild(merge_mutations)  # Edge 16->17
-    indels.addChild(merge_mutations)  # Edge 13->17
-    # H. Aggregated mutations will be translated to protein space
-    merge_mutations.addChild(snpeff)  # Edge 17->18
-    # I. snpeffed mutations will be converted into peptides
-    snpeff.addChild(transgene)  # Edge 18->19
-    # J. Merged haplotypes and peptides will be converted into jobs and submitted for mhc:peptide
-    # binding prediction
-    merge_phlat.addChild(spawn_mhc)  # Edge 14->20
-    transgene.addChild(spawn_mhc)  # Edge 19->20
-    # K. The results from all the predictions will be merged. This is a follow-on job because
-    # spawn_mhc will spawn an undetermined number of children.
-    spawn_mhc.addFollowOn(merge_mhc)  # Edges 20->XX->21 and 20->YY->21
-    # L. Finally, the merged mhc along with the gene expression will be used for rank boosting
-    rsem.addChild(rank_boost)  # Edge  9->22
-    merge_mhc.addChild(rank_boost)  # Edge 21->22
+    # sample_prep.addChild(bwa_tumor)  # Edge  1->3
+    # sample_prep.addChild(bwa_normal)  # Edge  1->4
+    # sample_prep.addChild(phlat_tumor_dna)  # Edge  1->5
+    # sample_prep.addChild(phlat_normal_dna)  # Edge  1->6
+    # sample_prep.addChild(phlat_tumor_rna)  # Edge  1->7
+    # # B. cutadapt will be followed by star
+    # cutadapt.addChild(star)  # Edge 2->8
+    # # Ci.  gene expression and fusion detection follow start alignment
+    # star.addChild(rsem)  # Edge  8->9
+    # star.addChild(fusions)  # Edge  8->10
+    # # Cii.  Radia depends on all 3 alignments
+    # star.addChild(Sradia)  # Edge  8->11
+    # bwa_tumor.addChild(Sradia)  # Edge  3->11
+    # bwa_normal.addChild(Sradia)  # Edge  4->11
+    # # Ciii. mutect and indel calling depends on dna to have been aligned
+    # bwa_tumor.addChild(Smutect)  # Edge  3->12
+    # bwa_normal.addChild(Smutect)  # Edge  4->12
+    # bwa_tumor.addChild(indels)  # Edge  3->13
+    # bwa_normal.addChild(indels)  # Edge  4->13
+    # # D. MHC haplotypes will be merged once all 3 samples have been PHLAT-ed
+    # phlat_tumor_dna.addChild(merge_phlat)  # Edge  5->14
+    # phlat_normal_dna.addChild(merge_phlat)  # Edge  6->14
+    # phlat_tumor_rna.addChild(merge_phlat)  # Edge  7->14
+    # # E. Delete the fastqs from the job store since all alignments are complete
+    # sample_prep.addChild(fastq_deletion)
+    # cutadapt.addChild(fastq_deletion)
+    # bwa_normal.addChild(fastq_deletion)
+    # bwa_tumor.addChild(fastq_deletion)
+    # phlat_normal_dna.addChild(fastq_deletion)
+    # phlat_tumor_dna.addChild(fastq_deletion)
+    # phlat_tumor_rna.addChild(fastq_deletion)
+    # # F. Mutation calls need to be merged before they can be used
+    # Sradia.addChild(Mradia)  # Edge 11->15
+    # Smutect.addChild(Mmutect)  # Edge 12->16
+    # # G. All mutations get aggregated when they have finished running
+    # fusions.addChild(merge_mutations)  # Edge 10->17
+    # Mradia.addChild(merge_mutations)  # Edge 15->17
+    # Mmutect.addChild(merge_mutations)  # Edge 16->17
+    # indels.addChild(merge_mutations)  # Edge 13->17
+    # # H. Aggregated mutations will be translated to protein space
+    # merge_mutations.addChild(snpeff)  # Edge 17->18
+    # # I. snpeffed mutations will be converted into peptides
+    # snpeff.addChild(transgene)  # Edge 18->19
+    # # J. Merged haplotypes and peptides will be converted into jobs and submitted for mhc:peptide
+    # # binding prediction
+    # merge_phlat.addChild(spawn_mhc)  # Edge 14->20
+    # transgene.addChild(spawn_mhc)  # Edge 19->20
+    # # K. The results from all the predictions will be merged. This is a follow-on job because
+    # # spawn_mhc will spawn an undetermined number of children.
+    # spawn_mhc.addFollowOn(merge_mhc)  # Edges 20->XX->21 and 20->YY->21
+    # # L. Finally, the merged mhc along with the gene expression will be used for rank boosting
+    # merge_mhc.addChild(rank_boost)  # Edge 21->22
+    # rsem.addChild(rank_boost)  # Edge  9->22
     return None
 
 
@@ -344,8 +344,9 @@ def run_cutadapt(job, fastqs, univ_options, cutadapt_options):
                   '-p', docker_path('rna_cutadapt_2.fastq'),  # Output for R2
                   input_files['rna_1.fastq'],
                   input_files['rna_2.fastq']]
-    docker_call(tool='cutadapt', tool_parameters=parameters, work_dir=work_dir,
-                dockerhub=univ_options['dockerhub'])
+    sizes = docker_call(tool='cutadapt', tool_parameters=parameters,
+            work_dir=work_dir, dockerhub=univ_options['dockerhub'])
+    job.fileStore.logToMaster('Maximum Directory Size %d' % max(sizes))
     output_files = defaultdict()
     for fastq_file in ['rna_cutadapt_1.fastq', 'rna_cutadapt_2.fastq']:
         output_files[fastq_file] = job.fileStore.writeGlobalFile('/'.join([work_dir, fastq_file]))
@@ -2117,11 +2118,21 @@ def docker_path(filepath):
     return os.path.join('/data', os.path.basename(filepath))
 
 
+def get_dir_size(dir):
+    size = 0
+    for f in scandir(dir):
+        if not f.name.startswith('.') and f.is_file():
+            size += os.stat(f.path).st_size
+    return size
+
+
 def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
                 dockerhub='aarjunrao', interactive=False):
     """
     Makes subprocess call of a command to a docker container. work_dir MUST BE AN ABSOLUTE PATH or
     the call will fail.  outfile is an open file descriptor to a writeable file.
+
+    Returns list of directory sizes in bytes
     """
     # If an outifle has been provided, then ensure that it is of type file, it is writeable, and
     # that it is open.
@@ -2164,7 +2175,12 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
             '--log-driver=none ' + interactive
     call = base_docker_call.split() + [docker_tool] + tool_parameters
     try:
-        subprocess.check_call(call, stdout=outfile)
+        sizes = []
+        p = subprocess.Popen(call, stdout=outfile)
+        while p.poll() is None:
+            size = get_dir_size(work_dir)
+            sizes.append(size)
+        return sizes
     except subprocess.CalledProcessError as err:
         raise RuntimeError('docker command returned a non-zero exit status (%s)' % err.returncode +
                            'for command \"%s\"' % ' '.join(call),)

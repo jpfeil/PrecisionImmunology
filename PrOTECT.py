@@ -344,9 +344,9 @@ def run_cutadapt(job, fastqs, univ_options, cutadapt_options):
                   '-p', docker_path('rna_cutadapt_2.fastq'),  # Output for R2
                   input_files['rna_1.fastq'],
                   input_files['rna_2.fastq']]
-    sizes = docker_call(tool='cutadapt', tool_parameters=parameters,
-            work_dir=work_dir, dockerhub=univ_options['dockerhub'])
-    job.fileStore.logToMaster('Maximum Directory Size %d' % max(sizes))
+    max_size = docker_call(tool='cutadapt', tool_parameters=parameters,
+                work_dir=work_dir, dockerhub=univ_options['dockerhub'])
+    job.fileStore.logToMaster('Maximum Directory Size %d' % max_sizes)
     output_files = defaultdict()
     for fastq_file in ['rna_cutadapt_1.fastq', 'rna_cutadapt_2.fastq']:
         output_files[fastq_file] = job.fileStore.writeGlobalFile('/'.join([work_dir, fastq_file]))
@@ -2118,11 +2118,12 @@ def docker_path(filepath):
     return os.path.join('/data', os.path.basename(filepath))
 
 
-def get_dir_size(dir):
+def get_dir_size(dir='.'):
     size = 0
-    for f in scandir(dir):
-        if not f.name.startswith('.') and f.is_file():
-            size += os.stat(f.path).st_size
+    for dirpath, dirnames, filenames in os.walk(dir):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            size += os.stat(fp).st_blocks * 512
     return size
 
 
@@ -2175,12 +2176,13 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
             '--log-driver=none ' + interactive
     call = base_docker_call.split() + [docker_tool] + tool_parameters
     try:
-        sizes = []
         p = subprocess.Popen(call, stdout=outfile)
+        # Get the max directory size in blocks
+        size = 0
         while p.poll() is None:
-            size = get_dir_size(work_dir)
-            sizes.append(size)
-        return sizes
+            size = max(get_dir_size(work_dir), size)
+            time.sleep(10)
+        return size
     except subprocess.CalledProcessError as err:
         raise RuntimeError('docker command returned a non-zero exit status (%s)' % err.returncode +
                            'for command \"%s\"' % ' '.join(call),)

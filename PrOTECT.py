@@ -395,12 +395,11 @@ def run_star(job, fastqs, univ_options, star_options):
                   '--outSAMtype', 'BAM', 'SortedByCoordinate',
                   '--quantMode', 'TranscriptomeSAM',
                   '--outSAMunmapped', 'Within']
-    if star_options['type'] == 'star':
-        docker_call(tool='star', tool_parameters=parameters, work_dir=work_dir,
-                    dockerhub=univ_options['dockerhub'])
-    else:
-        docker_call(tool='starlong', tool_parameters=parameters, work_dir=work_dir,
-                    dockerhub=univ_options['dockerhub'])
+
+    # Run STAR or StarLong
+    docker_call(tool=star_options['type'], tool_parameters=parameters,
+                work_dir=work_dir, dockerhub=univ_options['dockerhub'])
+
     output_files = defaultdict()
     for bam_file in ['rnaAligned.toTranscriptome.out.bam',
                      'rnaAligned.sortedByCoord.out.bam']:
@@ -2181,7 +2180,7 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
         size = 0
         while p.poll() is None:
             size = max(get_dir_size(work_dir), size)
-            time.sleep(10)
+            time.sleep(5)
         return size
     except subprocess.CalledProcessError as err:
         raise RuntimeError('docker command returned a non-zero exit status (%s)' % err.returncode +
@@ -2259,7 +2258,7 @@ def get_file_from_s3(job, s3_url, encryption_key=None, write_to_jobstore=True):
     # If an encryption key was provided, use it to create teh headers that need to be injected into
     # the curl script and append to the call
     if encryption_key:
-        key = generate_unique_key(encryption_key, s3_url)
+        key = generate_unique_key(encryption_key.strip(), s3_url)
         encoded_key = base64.b64encode(key)
         encoded_key_md5 = base64.b64encode( hashlib.md5(key).digest() )
         h1 = 'x-amz-server-side-encryption-customer-algorithm:AES256'

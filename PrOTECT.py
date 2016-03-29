@@ -346,7 +346,7 @@ def run_cutadapt(job, fastqs, univ_options, cutadapt_options):
                   input_files['rna_2.fastq']]
     max_size = docker_call(tool='cutadapt', tool_parameters=parameters,
                 work_dir=work_dir, dockerhub=univ_options['dockerhub'])
-    job.fileStore.logToMaster('Maximum Directory Size %d' % max_sizes)
+    job.fileStore.logToMaster('Maximum Directory Size %d' % max_size)
     output_files = defaultdict()
     for fastq_file in ['rna_cutadapt_1.fastq', 'rna_cutadapt_2.fastq']:
         output_files[fastq_file] = job.fileStore.writeGlobalFile('/'.join([work_dir, fastq_file]))

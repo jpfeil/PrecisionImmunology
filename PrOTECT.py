@@ -2236,7 +2236,7 @@ def generate_unique_key(master_key, url):
     off the master.
     """
     with open(master_key, 'r') as keyfile:
-        master_key = keyfile.read()
+        master_key = keyfile.read().strip()
     assert len(master_key) == 32, 'Invalid Key! Must be 32 characters. ' \
         'Key: {}, Length: {}'.format(master_key, len(master_key))
     new_key = hashlib.sha256(master_key + url).digest()
@@ -2258,7 +2258,8 @@ def get_file_from_s3(job, s3_url, encryption_key=None, write_to_jobstore=True):
     # If an encryption key was provided, use it to create teh headers that need to be injected into
     # the curl script and append to the call
     if encryption_key:
-        key = generate_unique_key(encryption_key.strip(), s3_url)
+        # Need to strip encryption_key because there is a newline character
+        key = generate_unique_key(encryption_key, s3_url)
         encoded_key = base64.b64encode(key)
         encoded_key_md5 = base64.b64encode( hashlib.md5(key).digest() )
         h1 = 'x-amz-server-side-encryption-customer-algorithm:AES256'

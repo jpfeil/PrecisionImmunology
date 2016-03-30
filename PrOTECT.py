@@ -2175,12 +2175,17 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
             '--log-driver=none ' + interactive
     call = base_docker_call.split() + [docker_tool] + tool_parameters
     try:
+        start_size = get_dir_size(work_dir)
         p = subprocess.Popen(call, stdout=outfile)
         # Get the max directory size in blocks
         size = 0
         while p.poll() is None:
             size = max(get_dir_size(work_dir), size)
             time.sleep(5)
+        with open('sizes', 'a') as fsizes:
+            fsizes.write("{}\n".format(tool)
+            fsizes.write("Start Size: {}\n".format(start_size))
+            fsizes.write("Max Size: {}\n\n".format(size))
         return size
     except subprocess.CalledProcessError as err:
         raise RuntimeError('docker command returned a non-zero exit status (%s)' % err.returncode +

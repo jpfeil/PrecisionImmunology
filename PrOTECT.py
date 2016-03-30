@@ -2485,6 +2485,7 @@ def main():
     Job.Runner.addToilOptions(parser)
     params = parser.parse_args()
     START = Job.wrapJobFn(parse_config_file, params.config_file).encapsulate()
+    params.logLevel = "INFO"
     Job.Runner.startToil(START, params)
     return None
 

@@ -2183,7 +2183,7 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
             size = max(get_dir_size(work_dir), size)
             time.sleep(5)
         with open('sizes', 'a') as fsizes:
-            fsizes.write("{}\n".format(tool)
+            fsizes.write("{}\n".format(' '.join(docker_tool + tool_parameters)))
             fsizes.write("Start Size: {}\n".format(start_size))
             fsizes.write("Max Size: {}\n\n".format(size))
         return size
@@ -2490,6 +2490,7 @@ def main():
     Job.Runner.addToilOptions(parser)
     params = parser.parse_args()
     START = Job.wrapJobFn(parse_config_file, params.config_file).encapsulate()
+    params.logLevel = "INFO"
     Job.Runner.startToil(START, params)
     return None
 

@@ -233,59 +233,59 @@ def pipeline_launchpad(job, fastqs, univ_options, tool_options):
     job.addChild(sample_prep)  # Edge  0->1
     # A. The first step is running the alignments and the MHC haplotypers
     sample_prep.addChild(cutadapt)  # Edge  1->2
-    # sample_prep.addChild(bwa_tumor)  # Edge  1->3
-    # sample_prep.addChild(bwa_normal)  # Edge  1->4
-    # sample_prep.addChild(phlat_tumor_dna)  # Edge  1->5
-    # sample_prep.addChild(phlat_normal_dna)  # Edge  1->6
-    # sample_prep.addChild(phlat_tumor_rna)  # Edge  1->7
-    # # B. cutadapt will be followed by star
-    # cutadapt.addChild(star)  # Edge 2->8
-    # # Ci.  gene expression and fusion detection follow start alignment
-    # star.addChild(rsem)  # Edge  8->9
-    # star.addChild(fusions)  # Edge  8->10
-    # # Cii.  Radia depends on all 3 alignments
-    # star.addChild(Sradia)  # Edge  8->11
-    # bwa_tumor.addChild(Sradia)  # Edge  3->11
-    # bwa_normal.addChild(Sradia)  # Edge  4->11
-    # # Ciii. mutect and indel calling depends on dna to have been aligned
-    # bwa_tumor.addChild(Smutect)  # Edge  3->12
-    # bwa_normal.addChild(Smutect)  # Edge  4->12
-    # bwa_tumor.addChild(indels)  # Edge  3->13
-    # bwa_normal.addChild(indels)  # Edge  4->13
-    # # D. MHC haplotypes will be merged once all 3 samples have been PHLAT-ed
-    # phlat_tumor_dna.addChild(merge_phlat)  # Edge  5->14
-    # phlat_normal_dna.addChild(merge_phlat)  # Edge  6->14
-    # phlat_tumor_rna.addChild(merge_phlat)  # Edge  7->14
-    # # E. Delete the fastqs from the job store since all alignments are complete
-    # sample_prep.addChild(fastq_deletion)
-    # cutadapt.addChild(fastq_deletion)
-    # bwa_normal.addChild(fastq_deletion)
-    # bwa_tumor.addChild(fastq_deletion)
-    # phlat_normal_dna.addChild(fastq_deletion)
-    # phlat_tumor_dna.addChild(fastq_deletion)
-    # phlat_tumor_rna.addChild(fastq_deletion)
-    # # F. Mutation calls need to be merged before they can be used
-    # Sradia.addChild(Mradia)  # Edge 11->15
-    # Smutect.addChild(Mmutect)  # Edge 12->16
-    # # G. All mutations get aggregated when they have finished running
-    # fusions.addChild(merge_mutations)  # Edge 10->17
-    # Mradia.addChild(merge_mutations)  # Edge 15->17
-    # Mmutect.addChild(merge_mutations)  # Edge 16->17
-    # indels.addChild(merge_mutations)  # Edge 13->17
-    # # H. Aggregated mutations will be translated to protein space
-    # merge_mutations.addChild(snpeff)  # Edge 17->18
-    # # I. snpeffed mutations will be converted into peptides
-    # snpeff.addChild(transgene)  # Edge 18->19
-    # # J. Merged haplotypes and peptides will be converted into jobs and submitted for mhc:peptide
-    # # binding prediction
-    # merge_phlat.addChild(spawn_mhc)  # Edge 14->20
-    # transgene.addChild(spawn_mhc)  # Edge 19->20
-    # # K. The results from all the predictions will be merged. This is a follow-on job because
-    # # spawn_mhc will spawn an undetermined number of children.
-    # spawn_mhc.addFollowOn(merge_mhc)  # Edges 20->XX->21 and 20->YY->21
-    # # L. Finally, the merged mhc along with the gene expression will be used for rank boosting
-    # merge_mhc.addChild(rank_boost)  # Edge 21->22
-    # rsem.addChild(rank_boost)  # Edge  9->22
+    sample_prep.addChild(bwa_tumor)  # Edge  1->3
+    sample_prep.addChild(bwa_normal)  # Edge  1->4
+    sample_prep.addChild(phlat_tumor_dna)  # Edge  1->5
+    sample_prep.addChild(phlat_normal_dna)  # Edge  1->6
+    sample_prep.addChild(phlat_tumor_rna)  # Edge  1->7
+    # B. cutadapt will be followed by star
+    cutadapt.addChild(star)  # Edge 2->8
+    # Ci.  gene expression and fusion detection follow start alignment
+    star.addChild(rsem)  # Edge  8->9
+    star.addChild(fusions)  # Edge  8->10
+    # Cii.  Radia depends on all 3 alignments
+    star.addChild(Sradia)  # Edge  8->11
+    bwa_tumor.addChild(Sradia)  # Edge  3->11
+    bwa_normal.addChild(Sradia)  # Edge  4->11
+    # Ciii. mutect and indel calling depends on dna to have been aligned
+    bwa_tumor.addChild(Smutect)  # Edge  3->12
+    bwa_normal.addChild(Smutect)  # Edge  4->12
+    bwa_tumor.addChild(indels)  # Edge  3->13
+    bwa_normal.addChild(indels)  # Edge  4->13
+    # D. MHC haplotypes will be merged once all 3 samples have been PHLAT-ed
+    phlat_tumor_dna.addChild(merge_phlat)  # Edge  5->14
+    phlat_normal_dna.addChild(merge_phlat)  # Edge  6->14
+    phlat_tumor_rna.addChild(merge_phlat)  # Edge  7->14
+    # E. Delete the fastqs from the job store since all alignments are complete
+    sample_prep.addChild(fastq_deletion)
+    cutadapt.addChild(fastq_deletion)
+    bwa_normal.addChild(fastq_deletion)
+    bwa_tumor.addChild(fastq_deletion)
+    phlat_normal_dna.addChild(fastq_deletion)
+    phlat_tumor_dna.addChild(fastq_deletion)
+    phlat_tumor_rna.addChild(fastq_deletion)
+    # F. Mutation calls need to be merged before they can be used
+    Sradia.addChild(Mradia)  # Edge 11->15
+    Smutect.addChild(Mmutect)  # Edge 12->16
+    # G. All mutations get aggregated when they have finished running
+    fusions.addChild(merge_mutations)  # Edge 10->17
+    Mradia.addChild(merge_mutations)  # Edge 15->17
+    Mmutect.addChild(merge_mutations)  # Edge 16->17
+    indels.addChild(merge_mutations)  # Edge 13->17
+    # H. Aggregated mutations will be translated to protein space
+    merge_mutations.addChild(snpeff)  # Edge 17->18
+    # I. snpeffed mutations will be converted into peptides
+    snpeff.addChild(transgene)  # Edge 18->19
+    # J. Merged haplotypes and peptides will be converted into jobs and submitted for mhc:peptide
+    # binding prediction
+    merge_phlat.addChild(spawn_mhc)  # Edge 14->20
+    transgene.addChild(spawn_mhc)  # Edge 19->20
+    # K. The results from all the predictions will be merged. This is a follow-on job because
+    # spawn_mhc will spawn an undetermined number of children.
+    spawn_mhc.addFollowOn(merge_mhc)  # Edges 20->XX->21 and 20->YY->21
+    # L. Finally, the merged mhc along with the gene expression will be used for rank boosting
+    merge_mhc.addChild(rank_boost)  # Edge 21->22
+    rsem.addChild(rank_boost)  # Edge  9->22
     return None
 
 
@@ -2183,7 +2183,7 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
             size = max(get_dir_size(work_dir), size)
             time.sleep(5)
         with open('sizes', 'a') as fsizes:
-            fsizes.write("{}\n".format(tool)
+            fsizes.write("{}\n".format(' '.join(docker_tool + tool_parameters)))
             fsizes.write("Start Size: {}\n".format(start_size))
             fsizes.write("Max Size: {}\n\n".format(size))
         return size

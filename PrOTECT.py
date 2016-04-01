@@ -174,6 +174,7 @@ def pipeline_launchpad(job, fastqs, univ_options, tool_options):
 
     This module corresponds to node 0 on the tree
     """
+
     # Add Patient id to univ_options as is is passed to every major node in the DAG and can be used
     # as a prefix for the logfile.
     univ_options['patient'] = fastqs['patient_id']
@@ -2496,4 +2497,8 @@ def main():
 
 
 if __name__ == '__main__':
+    try:
+        subprocess.check_call(['docker', 'images'])
+    except subprocess.CalledProcessError:
+	raise ValueError("Need to start docker daemon")
     main()

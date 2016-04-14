@@ -2120,15 +2120,18 @@ def docker_path(filepath):
 
 def get_dir_size(dir='.'):
     size = 0
+    structure = ''
     for dirpath, dirnames, filenames in os.walk(dir):
         for f in filenames:
             fp = os.path.join(dirpath, f)
-            size += os.stat(fp).st_blocks * 512
-    return size
+            fsize = os.stat(fp).st_blocks * 512
+            size += fsize
+            structure += 'Path: ' + fp + 'Size: ' + str(fsize) + '\n'
+    return size, structure
 
 
 def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
-                dockerhub='aarjunrao', interactive=False):
+                dockerhub='aarjunrao', interactive=False, filename=time.strftime("%Y-%m-%d")):
     """
     Makes subprocess call of a command to a docker container. work_dir MUST BE AN ABSOLUTE PATH or
     the call will fail.  outfile is an open file descriptor to a writeable file.
@@ -2180,13 +2183,15 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
         p = subprocess.Popen(call, stdout=outfile)
         # Get the max directory size in blocks
         size = 0
+        structure = ''
         while p.poll() is None:
-            size = max(get_dir_size(work_dir), size)
+            size, structure = max(get_dir_size(work_dir), size)
             time.sleep(5)
-        with open('sizes', 'a') as fsizes:
+        with open('{}-sizes'.format(filename), 'a') as fsizes:
             fsizes.write("{}\n".format(' '.join(docker_tool + tool_parameters)))
             fsizes.write("Start Size: {}\n".format(start_size))
-            fsizes.write("Max Size: {}\n\n".format(size))
+            fsizes.write("Max Size: {}\n".format(size))
+            fsizes.write(structure + '\n')
         return size
     except subprocess.CalledProcessError as err:
         raise RuntimeError('docker command returned a non-zero exit status (%s)' % err.returncode +

@@ -179,7 +179,7 @@ def pipeline_launchpad(job, fastqs, univ_options, tool_options):
     # as a prefix for the logfile.
     univ_options['patient'] = fastqs['patient_id']
     # Ascertain the number of available CPUs. Jobs will be given fractions of this value.
-    ncpu = cpu_count()
+    ncpu = 40 
     tool_options['star']['n'] = tool_options['bwa']['n'] = tool_options['phlat']['n'] = \
         tool_options['rsem']['n'] = ncpu / 3
     # Define the various nodes in the DAG
@@ -346,7 +346,7 @@ def run_cutadapt(job, fastqs, univ_options, cutadapt_options):
                   input_files['rna_1.fastq'],
                   input_files['rna_2.fastq']]
     max_size = docker_call(tool='cutadapt', tool_parameters=parameters,
-                work_dir=work_dir, dockerhub=univ_options['dockerhub'])
+                work_dir=work_dir, dockerhub=univ_options['dockerhub'], sample_name="tumor_rna")
     job.fileStore.logToMaster('Maximum Directory Size %d' % max_size)
     output_files = defaultdict()
     for fastq_file in ['rna_cutadapt_1.fastq', 'rna_cutadapt_2.fastq']:
@@ -399,7 +399,7 @@ def run_star(job, fastqs, univ_options, star_options):
 
     # Run STAR or StarLong
     docker_call(tool=star_options['type'], tool_parameters=parameters,
-                work_dir=work_dir, dockerhub=univ_options['dockerhub'])
+                work_dir=work_dir, dockerhub=univ_options['dockerhub'], sample_name="tumor_rna")
 
     output_files = defaultdict()
     for bam_file in ['rnaAligned.toTranscriptome.out.bam',
@@ -457,7 +457,7 @@ def run_bwa(job, fastqs, sample_type, univ_options, bwa_options):
                   input_files['dna_2.fastq']]
     with open(''.join([work_dir, '/', sample_type, '_aligned.sam']), 'w') as samfile:
         docker_call(tool='bwa', tool_parameters=parameters, work_dir=work_dir,
-                    dockerhub=univ_options['dockerhub'], outfile=samfile)
+                    dockerhub=univ_options['dockerhub'], outfile=samfile, sampe_name=sample_type)
     # samfile.name retains the path info
     output_file = job.fileStore.writeGlobalFile(samfile.name)
     samfile_processing = job.wrapJobFn(bam_conversion, output_file, sample_type, univ_options,
@@ -495,7 +495,7 @@ def bam_conversion(job, samfile, sample_type, univ_options):
                   input_files['aligned.sam']
                   ]
     docker_call(tool='samtools', tool_parameters=parameters, work_dir=work_dir,
-                dockerhub=univ_options['dockerhub'])
+                dockerhub=univ_options['dockerhub'], sample_name=sample_type)
     output_file = job.fileStore.writeGlobalFile(bamfile)
     job.fileStore.deleteGlobalFile(samfile)
     reheader_bam = job.wrapJobFn(fix_bam_header, output_file, sample_type, univ_options, disk='60G')
@@ -538,7 +538,7 @@ def fix_bam_header(job, bamfile, sample_type, univ_options):
                   input_files['aligned.bam']]
     with open('/'.join([work_dir, 'aligned_fixPG.bam']), 'w') as fixpg_bamfile:
         docker_call(tool='samtools', tool_parameters=parameters, work_dir=work_dir,
-                    dockerhub=univ_options['dockerhub'], outfile=fixpg_bamfile)
+                    dockerhub=univ_options['dockerhub'], outfile=fixpg_bamfile, sample_name=sample_type)
     output_file = job.fileStore.writeGlobalFile(fixpg_bamfile.name)
     job.fileStore.deleteGlobalFile(bamfile)
     add_rg = job.wrapJobFn(add_readgroups, output_file, sample_type, univ_options, disk='60G')
@@ -576,7 +576,7 @@ def add_readgroups(job, bamfile, sample_type, univ_options):
                   'PU=12345',
                   ''.join(['SM=', sample_type.rstrip('_dna')])]
     docker_call(tool='picard', tool_parameters=parameters, work_dir=work_dir,
-                dockerhub=univ_options['dockerhub'], java_opts=univ_options['java_Xmx'])
+                dockerhub=univ_options['dockerhub'], java_opts=univ_options['java_Xmx'], sample_name=sample_type)
     output_file = job.fileStore.writeGlobalFile('/'.join([work_dir,
                                                           'aligned_fixpg_sorted_reheader.bam']))
     job.fileStore.deleteGlobalFile(bamfile)
@@ -609,7 +609,7 @@ def index_bamfile(job, bamfile, sample_type, univ_options):
     parameters = ['index',
                   input_files[in_bamfile]]
     docker_call(tool='samtools', tool_parameters=parameters,
-                work_dir=work_dir, dockerhub=univ_options['dockerhub'])
+                work_dir=work_dir, dockerhub=univ_options['dockerhub'], sample_name=sample_type)
     output_files = {in_bamfile: bamfile,
                     in_bamfile + '.bai': job.fileStore.writeGlobalFile('/'.join([work_dir,
                                                                                  in_bamfile +
@@ -652,7 +652,7 @@ def run_rsem(job, star_bams, univ_options, rsem_options):
                   '/'.join([input_files['rsem_index'], 'hg19']),
                   'rsem']
     docker_call(tool='rsem', tool_parameters=parameters, work_dir=work_dir,
-                dockerhub=univ_options['dockerhub'])
+                dockerhub=univ_options['dockerhub'], sample_name="tumor_rna")
     output_file = \
         job.fileStore.writeGlobalFile('/'.join([work_dir, 'rsem.isoforms.results']))
     return output_file
@@ -825,7 +825,7 @@ def run_radia(job, bams, univ_options, radia_options, chrom):
                   '-l', 'INFO',
                   '-g', docker_path(radia_log)]
     docker_call(tool='radia', tool_parameters=parameters, work_dir=work_dir,
-                dockerhub=univ_options['dockerhub'])
+                dockerhub=univ_options['dockerhub'], sample_name="normal_dna tumor_dna tumor_rna")
     output_files = defaultdict()
     for radia_file in [radia_output, radia_log]:
         output_files[os.path.basename(radia_file)] = \
@@ -890,7 +890,7 @@ def run_filter_radia(job, bams, radia_file, univ_options, radia_options, chrom):
                   '--log=INFO',
                   '-g', docker_path(filterradia_log)]
     docker_call(tool='filterradia', tool_parameters=parameters,
-                work_dir=work_dir, dockerhub=univ_options['dockerhub'])
+                work_dir=work_dir, dockerhub=univ_options['dockerhub'], sample_name="normal_dna tumor_dna tumor_rna")
     output_files = defaultdict()
     output_files[filterradia_output] = \
         job.fileStore.writeGlobalFile(''.join([work_dir, '/',
@@ -1056,7 +1056,7 @@ def run_mutect(job, tumor_bam, normal_bam, univ_options, mutect_options, chrom):
                  ]
     Xmx = mutect_options['java_Xmx'] if mutect_options['java_Xmx'] else univ_options['java_Xmx']
     docker_call(tool='mutect:1.1.7', tool_parameters=parameters, work_dir=work_dir,
-                dockerhub=univ_options['dockerhub'], java_opts=Xmx)
+                dockerhub=univ_options['dockerhub'], java_opts=Xmx, sample_name="normal_dna tumor_dna")
     output_files = defaultdict()
     for mutect_file in [mutout, mutvcf]:
         output_files[os.path.basename(mutect_file)] = job.fileStore.writeGlobalFile(mutect_file)
@@ -1180,7 +1180,8 @@ def run_snpeff(job, merged_mutation_file, univ_options, snpeff_options):
     Xmx = snpeff_options['java_Xmx'] if snpeff_options['java_Xmx'] else univ_options['java_Xmx']
     with open('/'.join([work_dir, 'snpeffed_mutations.vcf']), 'w') as snpeff_file:
         docker_call(tool='snpeff', tool_parameters=parameters, work_dir=work_dir,
-                    dockerhub=univ_options['dockerhub'], java_opts=Xmx, outfile=snpeff_file)
+                    dockerhub=univ_options['dockerhub'], java_opts=Xmx, outfile=snpeff_file, 
+	            sample_name="normal_dna tumor_dna tumor_rna")
     output_file = job.fileStore.writeGlobalFile(snpeff_file.name)
     return output_file
 
@@ -1269,7 +1270,7 @@ def run_phlat(job, fastqs, sample_type, univ_options, phlat_options):
                   '-o', '/data',  # Output directory
                   '-p', str(phlat_options['n'])]  # Number of threads
     docker_call(tool='phlat', tool_parameters=parameters, work_dir=work_dir,
-                dockerhub=univ_options['dockerhub'])
+                dockerhub=univ_options['dockerhub'], sample_name=sample_type)
     output_file = job.fileStore.writeGlobalFile(''.join([work_dir, '/', sample_type, '_HLA.sum']))
     return output_file
 
@@ -2126,12 +2127,13 @@ def get_dir_size(dir='.'):
             fp = os.path.join(dirpath, f)
             fsize = os.stat(fp).st_blocks * 512
             size += fsize
-            structure += 'Path: ' + fp + 'Size: ' + str(fsize) + '\n'
+            structure += 'Path: ' + fp + ' Size: ' + str(fsize) + '\n'
     return size, structure
 
 
 def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
-                dockerhub='aarjunrao', interactive=False, filename=time.strftime("%Y-%m-%d")):
+                dockerhub='aarjunrao', interactive=False, filename=time.strftime("%Y-%m-%d"),
+		sample_name=None):
     """
     Makes subprocess call of a command to a docker container. work_dir MUST BE AN ABSOLUTE PATH or
     the call will fail.  outfile is an open file descriptor to a writeable file.
@@ -2179,7 +2181,7 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
             '--log-driver=none ' + interactive
     call = base_docker_call.split() + [docker_tool] + tool_parameters
     try:
-        start_size = get_dir_size(work_dir)
+        start_size, structure = get_dir_size(work_dir)
         p = subprocess.Popen(call, stdout=outfile)
         # Get the max directory size in blocks
         size = 0
@@ -2187,11 +2189,12 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
         while p.poll() is None:
             size, structure = max(get_dir_size(work_dir), size)
             time.sleep(5)
-        with open('{}-sizes'.format(filename), 'a') as fsizes:
-            fsizes.write("{}\n".format(' '.join(docker_tool + tool_parameters)))
+        with open('a57414a5-fcdb-47b5-b07e-edc7dc460783-{}-sizes'.format(filename), 'a') as fsizes:
+            fsizes.write("{}\n".format(sample_name))
+            fsizes.write("{}\n".format(' '.join([docker_tool] + tool_parameters)))
             fsizes.write("Start Size: {}\n".format(start_size))
             fsizes.write("Max Size: {}\n".format(size))
-            fsizes.write(structure + '\n')
+    #        fsizes.write(structure + '\n')
         return size
     except subprocess.CalledProcessError as err:
         raise RuntimeError('docker command returned a non-zero exit status (%s)' % err.returncode +

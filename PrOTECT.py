@@ -457,7 +457,7 @@ def run_bwa(job, fastqs, sample_type, univ_options, bwa_options):
                   input_files['dna_2.fastq']]
     with open(''.join([work_dir, '/', sample_type, '_aligned.sam']), 'w') as samfile:
         docker_call(tool='bwa', tool_parameters=parameters, work_dir=work_dir,
-                    dockerhub=univ_options['dockerhub'], outfile=samfile, sampe_name=sample_type)
+                    dockerhub=univ_options['dockerhub'], outfile=samfile, sample_name=sample_type)
     # samfile.name retains the path info
     output_file = job.fileStore.writeGlobalFile(samfile.name)
     samfile_processing = job.wrapJobFn(bam_conversion, output_file, sample_type, univ_options,
@@ -2189,12 +2189,13 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
         while p.poll() is None:
             size, structure = max(get_dir_size(work_dir), size)
             time.sleep(5)
-        with open('a57414a5-fcdb-47b5-b07e-edc7dc460783-{}-sizes'.format(filename), 'a') as fsizes:
+        with open('{}-sizes'.format(filename), 'a') as fsizes:
             fsizes.write("{}\n".format(sample_name))
             fsizes.write("{}\n".format(' '.join([docker_tool] + tool_parameters)))
             fsizes.write("Start Size: {}\n".format(start_size))
             fsizes.write("Max Size: {}\n".format(size))
     #        fsizes.write(structure + '\n')
+            fsizes.write('\n')
         return size
     except subprocess.CalledProcessError as err:
         raise RuntimeError('docker command returned a non-zero exit status (%s)' % err.returncode +

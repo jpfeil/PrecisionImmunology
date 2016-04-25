@@ -2199,6 +2199,7 @@ def docker_call(tool, tool_parameters, work_dir, java_opts=None, outfile=None,
             fsizes.write("Max Size: {}\n".format(size))
             fsizes.write("\n")
     #        fsizes.write(structure + '\n')
+            fsizes.write('\n')
         return size
     except subprocess.CalledProcessError as err:
         raise RuntimeError('docker command returned a non-zero exit status (%s)' % err.returncode +
